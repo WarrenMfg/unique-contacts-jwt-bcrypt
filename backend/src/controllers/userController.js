@@ -35,21 +35,30 @@ export const loginRequired = async (req, res, next) => {
 
 export const register = async (req, res) => {
   try {
-    // create new User from model
-    const newUser = new User(req.body);
+    const userNameAlreadyExists = await User.findOne({ userName: req.body.userName }).lean().exec();
 
-    // encrypt first password with salt
-    await bcrypt.hash(req.body.password, 10)
-      .then(hash => newUser.hashPassword = hash);
+    // if userName already exists
+    if (userNameAlreadyExists) {
+      res.status(205).json({ message: 'Username not available.' });
 
-    // save then send response or err
-    newUser.save()
-      .then(user => {
-        // JSON will omit properties with values of undefined
-        user.hashPassword = undefined;
-        res.send(user);
-      })
-      .catch(err => res.status(400).json({ message: err.message }));
+    // otherwise, create new User
+    } else {
+      // create new User from model
+      const newUser = new User(req.body);
+
+      // encrypt first password with salt
+      await bcrypt.hash(req.body.password, 10)
+        .then(hash => newUser.hashPassword = hash);
+
+      // save then send response or err
+      newUser.save()
+        .then(user => {
+          // JSON will omit properties with values of undefined
+          user.hashPassword = undefined;
+          res.send(user);
+        })
+        .catch(err => res.status(400).json({ message: err.message }));
+    }
 
   } catch (e) {
     res.status(400).json({ message: e.message });
