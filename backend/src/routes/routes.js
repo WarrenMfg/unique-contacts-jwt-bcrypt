@@ -4,8 +4,8 @@ import {
   getContact,
   updateContact,
   deleteContact,
-  deleteAllContacts,
-  deleteAllContactsBeforeDeleteUser
+  deleteContacts,
+  deleteContactsBeforeDeleteUser
 } from '../controllers/contactController';
 import {
   loginRequired,
@@ -50,7 +50,7 @@ const routes = app => {
 
   app.route('/user')
     .all(loginRequired)
-    .delete(deleteAllContactsBeforeDeleteUser, deleteUser);
+    .delete(deleteContactsBeforeDeleteUser, deleteUser);
 
 
 
@@ -58,7 +58,7 @@ const routes = app => {
   app.route('/contacts')
     .all(loginRequired)
     .get(getContacts)
-    .delete(deleteAllContacts);
+    .delete(deleteContacts);
 
 };
 

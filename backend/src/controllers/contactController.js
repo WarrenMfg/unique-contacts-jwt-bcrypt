@@ -77,7 +77,7 @@ export const getContacts = async (req, res) => {
 };
 
 
-export const deleteAllContacts = async (req, res) => {
+export const deleteContacts = async (req, res) => {
   try {
     const deletedContacts = await Contact.deleteMany({ createdBy: req.user._id }).lean().exec();
 
@@ -89,7 +89,7 @@ export const deleteAllContacts = async (req, res) => {
 };
 
 
-export const deleteAllContactsBeforeDeleteUser = async (req, res, next) => {
+export const deleteContactsBeforeDeleteUser = async (req, res, next) => {
   try {
     await Contact.deleteMany({ createdBy: req.user._id }).lean().exec();
     next();
