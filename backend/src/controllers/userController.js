@@ -8,23 +8,23 @@ export const loginRequired = async (req, res, next) => {
   try {
     // if JWT is verified (not expired)
     if (req.user) {
-      // see if user is a valid user (not a deleted account)
+      // see if user is a valid user (e.g. not a deleted account)
       const validUser = await User.findOne({ email: req.user.email, userName: req.user.userName, _id: req.user._id }).lean().exec();
 
-      // if no validUser
+      // if no validUser (e.g. deleted account)
       if (!validUser) {
-        res.status(401).json({ message: 'Unauthorized user!' });
+        res.redirect(303, '/auth/register');
       // if validUser is not logged in
       } else if (!validUser.isLoggedIn) {
-        res.status(401).json({ message: 'Unauthorized user!' });
+        res.redirect(303, '/auth/login');
       // validUser and isLoggedIn
       } else {
         next();
       }
 
-    // otherwise, if JWT is not verified, send reason
+    // otherwise, JWT is not verified; redirect to login
     } else {
-      res.status(401).json({ message: 'Unauthorized user!' });
+      res.redirect(303, '/auth/login');
     }
 
   } catch (e) {
@@ -39,6 +39,7 @@ export const register = async (req, res) => {
 
     // if userName already exists
     if (userNameAlreadyExists) {
+      // 205 Reset Content
       res.status(205).json({ message: 'Username not available.' });
 
     // otherwise, create new User
@@ -121,6 +122,7 @@ export const logout = async (req, res) => {
       res.status(400).json({ message: 'Could not log out user.' });
     // otherwise send loggedOutUser
     } else {
+      loggedOutUser.hashPassword = undefined;
       res.send(loggedOutUser);
     }
 

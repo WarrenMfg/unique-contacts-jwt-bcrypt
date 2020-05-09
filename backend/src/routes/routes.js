@@ -18,17 +18,14 @@ import {
 
 const routes = app => {
 
+  // AUTHORIZATION
   // registration
   app.route('/auth/register')
     .post(register)
 
-
-
   // login
   app.route('/auth/login')
     .post(login)
-
-
 
   // logout
   app.route('/auth/logout')
@@ -37,6 +34,7 @@ const routes = app => {
 
 
 
+  // CONTACTS
   // one
   app.route('/contact')
     .all(loginRequired)
@@ -51,8 +49,6 @@ const routes = app => {
   app.route('/user')
     .all(loginRequired)
     .delete(deleteContactsBeforeDeleteUser, deleteUser);
-
-
 
   // many
   app.route('/contacts')
