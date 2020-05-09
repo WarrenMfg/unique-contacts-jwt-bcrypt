@@ -1,7 +1,7 @@
 {
-  "name": "shared-contacts-jwt-bcrypt",
+  "name": "unique-contacts-jwt-bcrypt",
   "version": "1.0.0",
-  "description": "Node/MongoDB shared contact store for authorized users",
+  "description": "Node/MongoDB unique contact store for authorized users",
   "main": "backend/server/index.js",
   "scripts": {
     "startDev": "nodemon dist/server/index.js",
