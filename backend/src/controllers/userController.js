@@ -8,13 +8,16 @@ export const loginRequired = async (req, res, next) => {
   try {
     // if JWT is verified (not expired)
     if (req.user) {
-      // see if user is still an active user (not a deleted account)
-      const activeUser = await User.findOne({ email: req.user.email, userName: req.user.userName, _id: req.user._id });
+      // see if user is a valid user (not a deleted account)
+      const validUser = await User.findOne({ email: req.user.email, userName: req.user.userName, _id: req.user._id }).lean().exec();
 
-      // if no aciveUser, send reason (e.g. account was deleted but user was not logged out)
-      if (!activeUser) {
+      // if no validUser
+      if (!validUser) {
         res.status(401).json({ message: 'Unauthorized user!' });
-      // otherwise, activeUser exists, now go to route
+      // if validUser is not logged in
+      } else if (!validUser.isLoggedIn) {
+        res.status(401).json({ message: 'Unauthorized user!' });
+      // validUser and isLoggedIn
       } else {
         next();
       }
@@ -58,7 +61,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     // get user by userName
-    const user = await User.findOne({ userName: req.body.userName });
+    const user = await User.findOne({ userName: req.body.userName }).lean().exec();
 
     // if not found
     if (!user) {
@@ -66,19 +69,51 @@ export const login = async (req, res) => {
 
     // if found
     } else {
+      let passwordIsValid = false;
+
       // compare password with hashPassword
-      bcrypt.compare(req.body.password, user.hashPassword)
+      await bcrypt.compare(req.body.password, user.hashPassword)
         .then(match => {
-          // if match, send token
-          if (match) {
-            res.send({ token: jwt.sign({ email: user.email, userName: user.userName, _id: user._id }, config.secret, {expiresIn: config.expiresIn}) });
-          // otherwise, send reason
-          } else {
+          // if no match, send reason
+          if (!match) {
             res.status(401).json({ message: 'Authentication failed. Wrong user name or password.' });
+          // otherwise, passwordIsValid
+          } else {
+            passwordIsValid = true;
           }
         })
         .catch(err => res.status(400).json({ message: err.message }));
+
+      // if passwordIsValid
+      if (passwordIsValid) {
+        const loggedInUser = await User.findOneAndUpdate({ userName: req.body.userName }, { isLoggedIn: true }, { new: true }).lean().exec();
+
+        if (!loggedInUser) {
+          res.status(400).json({ message: 'Could not log in user.' });
+        } else {
+          res.send({ token: jwt.sign({ email: user.email, userName: user.userName, _id: user._id }, config.secret, {expiresIn: config.expiresIn}) });
+        }
       }
+    }
+
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+
+export const logout = async (req, res) => {
+  try {
+    // find user and log out
+    const loggedOutUser = await User.findOneAndUpdate({ email: req.user.email, userName: req.user.userName, _id: req.user._id }, { isLoggedIn: false }, { new: true }).lean().exec();
+
+    // if could not findOneAndUpdate
+    if (!loggedOutUser) {
+      res.status(400).json({ message: 'Could not log out user.' });
+    // otherwise send loggedOutUser
+    } else {
+      res.send(loggedOutUser);
+    }
 
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -92,13 +127,14 @@ export const deleteUser = async (req, res) => {
   try {
     // find user
     const deletedUser = await User.findOneAndRemove({ email: req.user.email, userName: req.user.userName, _id: req.user._id });
-    deletedUser.hashPassword = undefined;
 
     // if not found (e.g. user was not logged out)
     if (!deletedUser) {
       res.status(401).json({ message: 'Unauthorized user!' });
     // otherwise, if user was deleted
     } else {
+      deletedUser.hashPassword = undefined;
+      deletedUser.isLoggedIn = false;
       res.send(deletedUser);
     }
 

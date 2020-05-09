@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { Contact } from '../models/contactModel';
 
 
@@ -78,15 +77,22 @@ export const getContacts = async (req, res) => {
 };
 
 
-export const deleteContacts = async (req, res, next) => {
+export const deleteAllContacts = async (req, res) => {
   try {
     const deletedContacts = await Contact.deleteMany({ createdBy: req.user._id }).lean().exec();
-    console.log(deletedContacts);
-    if (!deletedContacts) {
-      res.status(400).json({ message: 'No contacts found.' });
-    } else {
-      next();
-    }
+
+    res.send(deletedContacts);
+
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+
+export const deleteAllContactsBeforeDeleteUser = async (req, res, next) => {
+  try {
+    await Contact.deleteMany({ createdBy: req.user._id }).lean().exec();
+    next();
 
   } catch (e) {
     res.status(400).json({ message: e.message });

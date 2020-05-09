@@ -15,6 +15,11 @@ const UserSchema = new Schema({
   hashPassword: {
     type: String,
     required: true
+  },
+  isLoggedIn: {
+    type: Boolean,
+    required: true,
+    default: false
   }
 },
 {
