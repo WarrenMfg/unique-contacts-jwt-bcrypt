@@ -25,7 +25,7 @@ app.use(express.json());
 
 // JWT setup
 app.use((req, res, next) => {
-  if (req?.headers?.authorization?.split(' ')[0] === 'JWT') {
+  if (req?.headers?.authorization?.split(' ')[0] === 'Bearer') {
     jsonwebtoken.verify(req.headers.authorization.split(' ')[1], config.secret, (err, decode) => {
       if (err) {
         req.user = undefined;
